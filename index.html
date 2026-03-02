@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Kočka a jídlo + Tetris</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+        background: linear-gradient(135deg, #ffd89b 0%, #fff5dc 50%, #ffe4b5 100%);
+        text-align: center;
+        min-height: 100vh;
+        padding: 10px;
+    }
+
+    h1 {
+        margin: 10px 0;
+        font-size: 2em;
+        color: #ff6b9d;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .menu-screen {
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .menu-btn {
+        background: white;
+        border: 4px solid #ff6b9d;
+        border-radius: 20px;
+        padding: 30px;
+        min-width: 180px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    .menu-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+        border-color: #ff69b4;
+    }
+
+    .back-btn {
+        background: rgba(255, 107, 157, 0.8);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        background: rgba(255, 107, 157, 1);
+        transform: scale(1.05);
+    }
+
+    .games-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .game-section {
+        flex: 1;
+        min-width: 350px;
+    }
+
+    .hud {
+        font-size: 16px;
+        margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 8px 15px;
+        border-radius: 15px;
+        display: inline-block;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        color: #ff6b9d;
+        font-weight: bold;
+    }
+
+    #game {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 100%);
+        border: 6px solid #ff69b4;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    #tetris-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        background: #222;
+        border: 6px solid #4169e1;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    #tetris-grid {
+        position: absolute;
+        width: 200px;
+        height: 400px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111;
+        border: 2px solid #333;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(20, 1fr);
+        gap: 0;
+    }
+
+    .tetris-cell {
+        border: 1px solid #333;
+        position: relative;
+    }
+
+    .tetris-block {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    #block-blast-container {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+    }
+
+    #block-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 60px);
+        grid-template-rows: repeat(6, 60px);
+        gap: 5px;
+        background: rgba(65, 105, 225, 0.1);
+        padding: 10px;
+        border-radius: 10px;
+        border: 3px solid #4169e1;
+    }
+
+    .block-cell {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 2px solid #4169e1;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        user-select: none;
+    }
+
+    .block-cell:hover {
+        transform: scale(1.05);
+        background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+    }
+
+    .block-cell.filled {
+        cursor: not-allowed;
+    }
+
+    #puzzle-container {
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 20px 0;
+    }
+
+    #puzzle-board {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        grid-template-rows: repeat(3, 100px);
+        gap: 5px;
+        background: #f0f0f0;
+        padding: 10px;
+        border-radius: 10px;
+        border: 3px solid #ff9800;
+    }
+
+    .puzzle-slot {
+        background: linear-gradient(135deg, #fff9e6 0%, #ffe4b5 100%);
+        border: 2px dashed #ff9800;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-height: 100px;
+    }
+
+    .puzzle-slot:hover {
+        background: linear-gradient(135deg, #ffe6cc 0%, #ffd699 100%);
+        transform: scale(1.05);
+    }
+
+    .puzzle-slot.filled {
+        border: 2px solid #ff9800;
+    }
+
+    #puzzle-pieces {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        padding: 15px;
+        background: rgba(255, 152, 0, 0.1);
+        border-radius: 10px;
+        min-width: 300px;
+    }
+
+    .puzzle-piece {
+        background: white;
+        border: 3px solid #ff9800;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-size: 30px;
+        cursor: grab;
+        user-select: none;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .puzzle-piece:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    .puzzle-piece:active {
+        cursor: grabbing;
+    }
+
+    .puzzle-piece.placed {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #memory-board {
+        display: grid;
+        grid-template-columns: repeat(4, 80px);
+        grid-template-rows: repeat(4, 80px);
+        gap: 10px;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(255, 152, 0, 0.1);
+        border-radius: 15px;
+        margin: 20px auto;
+        width: fit-content;
+    }
+
+    .memory-card {
+        background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+        border: 3px solid #f57c00;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        user-select: none;
+    }
+
+    .memory-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    .memory-card.flipped {
+        background: linear-gradient(135deg, #fff9e6 0%, #ffe4b5 100%);
+        border-color: #ffb74d;
+    }
+
+    .memory-card.matched {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    /* pás - Kočka a jídlo */
+    #belt {
+        position: absolute;
+        bottom: 50px;
+        width: 100%;
+        height: 60px;
+        background: linear-gradient(90deg, #d4a574 0%, #cd853f 50%, #d4a574 100%);
+        border-top: 2px dashed #8b4513;
+        border-bottom: 2px dashed #8b4513;
+    }
+
+    /* kočka */
+    #cat {
+        position: absolute;
+        bottom: 110px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 60px;
+        filter: grayscale(100%) drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        animation: catBounce 0.6s ease-in-out infinite;
+    }
+
+    @keyframes catBounce {
+        0%, 100% { transform: translateX(-50%) translateY(0); }
+        50% { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    .food {
+        position: absolute;
+        bottom: 65px;
+        font-size: 40px;
+        cursor: pointer;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        animation: foodBounce 0.4s ease-in-out infinite;
+        transition: transform 0.1s;
+    }
+
+    .food:hover {
+        transform: scale(1.15);
+    }
+
+    @keyframes foodBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    p {
+        margin: 10px 0;
+        font-size: 14px;
+        color: #ff6b9d;
+        font-weight: bold;
+    }
+
+    .instructions {
+        max-width: 1200px;
+        margin: 10px auto;
+        font-size: 14px;
+    }
+</style>
+</head>
+<body>
+
+<h1>🎮 Vyber si hru 🎮</h1>
+
+<div id="menu" class="menu-screen">
+    <h2 style="font-size: 2em; margin: 30px 0;">Vítej v herním světě!</h2>
+    <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin-top: 50px;">
+        <button class="menu-btn" onclick="startGame('cat')">
+            <div style="font-size: 80px; margin-bottom: 15px;">😺</div>
+            <div style="font-size: 24px; font-weight: bold;">Kočka a jídlo</div>
+        </button>
+        <button class="menu-btn" onclick="startGame('tetris')">
+            <div style="font-size: 80px; margin-bottom: 15px;">🧩</div>
+            <div style="font-size: 24px; font-weight: bold;">Puzzle</div>
+        </button>
+        <button class="menu-btn" onclick="startGame('puzzle')">
+            <div style="font-size: 80px; margin-bottom: 15px;">🧩</div>
+            <div style="font-size: 24px; font-weight: bold;">Memory</div>
+        </button>
+    </div>
+</div>
+
+<div id="game-container" style="display: none;">
+    <button class="back-btn" onclick="backToMenu()">← Zpět na menu</button>
+
+    <div id="cat-game" style="display: none;">
+        <h2 style="color: #ff69b4; margin-top: 0;">😺 Kočka a jídlo</h2>
+        <div class="hud">
+            Skóre: <span id="score">0</span> | Životy: <span id="lives">❤️❤️❤️</span>
+        </div>
+        <div id="game">
+            <div id="cat">😺</div>
+            <div id="belt"></div>
+        </div>
+        <p>Klikni na <b>dobré jídlo</b>! 🍽️</p>
+    </div>
+
+    <div id="tetris-game" style="display: none;">
+        <h2 style="color: #4169e1; margin-top: 0;">🧩 Puzzle</h2>
+        <div class="hud">
+            Skóre: <span id="tetris-score">0</span>
+        </div>
+        <div id="block-blast-container" style="display: flex; justify-content: center; align-items: center; gap: 20px;">
+            <div id="puzzle-simple" style="width: 100%; padding: 20px;"></div>
+        </div>
+    </div>
+
+    <div id="puzzle-game" style="display: none;">
+        <h2 style="color: #ff9800; margin-top: 0;">🧩 Memory</h2>
+        <div class="hud">
+            Páry: <span id="puzzle-count">0</span>/8
+        </div>
+        <div id="memory-board"></div>
+        <p style="color: #ff9800;">Najdi všechny páry!</p>
+    </div>
+</div>
+
+<script>
+    let currentGame = null;
+    let foodSpawnInterval = null;
+    let tetrisInterval = null;
+
+    function startGame(game) {
+        const menu = document.getElementById("menu");
+        const gameContainer = document.getElementById("game-container");
+        
+        menu.style.display = "none";
+        gameContainer.style.display = "block";
+        currentGame = game;
+
+        if (game === "cat") {
+            document.getElementById("cat-game").style.display = "block";
+            document.getElementById("tetris-game").style.display = "none";
+            document.getElementById("puzzle-game").style.display = "none";
+            initCatGame();
+        } else if (game === "tetris") {
+            document.getElementById("tetris-game").style.display = "block";
+            document.getElementById("cat-game").style.display = "none";
+            document.getElementById("puzzle-game").style.display = "none";
+            initBlockBlastGame();
+        } else if (game === "puzzle") {
+            document.getElementById("puzzle-game").style.display = "block";
+            document.getElementById("cat-game").style.display = "none";
+            document.getElementById("tetris-game").style.display = "none";
+            initPuzzleGame();
+        }
+    }
+
+    function backToMenu() {
+        const menu = document.getElementById("menu");
+        const gameContainer = document.getElementById("game-container");
+        
+        menu.style.display = "block";
+        gameContainer.style.display = "none";
+        
+        // Zastaví hry
+        if (foodSpawnInterval) clearInterval(foodSpawnInterval);
+        if (tetrisInterval) clearInterval(tetrisInterval);
+        
+        // Vynuluj skóre a ukazatele her
+        document.getElementById("score").textContent = "0";
+        document.getElementById("lives").textContent = "❤️❤️❤️";
+        const tetrisScoreEl = document.getElementById("tetris-score");
+        if (tetrisScoreEl) tetrisScoreEl.textContent = "0";
+        const puzzleCountEl = document.getElementById("puzzle-count");
+        if (puzzleCountEl) puzzleCountEl.textContent = "0";
+        
+        // Smaž jídlo z hřiště
+        const game = document.getElementById("game");
+        const foods = game.querySelectorAll(".food");
+        foods.forEach(food => food.remove());
+        
+        currentGame = null;
+    }
+
+    // ===== PICTURE PUZZLE =====
+    function initCatGame() {
+        const game = document.getElementById("game");
+        const scoreEl = document.getElementById("score");
+        const livesEl = document.getElementById("lives");
+
+        let score = parseInt(scoreEl.textContent);
+        let lives = 3;
+        livesEl.textContent = "❤️❤️❤️";
+
+        const goodFoods = ["🐟", "🍗", "🥛", "🥦", "🥬"];
+        const badFoods = ["🗑️", "🤢"];
+        const MAX_SCORE = 30;
+
+        function spawnFood() {
+            const food = document.createElement("div");
+            food.classList.add("food");
+
+            const isGood = Math.random() < 0.7;
+            food.textContent = isGood
+                ? goodFoods[Math.floor(Math.random() * goodFoods.length)]
+                : badFoods[Math.floor(Math.random() * badFoods.length)];
+
+            food.dataset.good = isGood;
+            food.style.left = "-50px";
+            game.appendChild(food);
+
+            let x = -50;
+            const speed = 0.8 + Math.random() * 0.6;
+
+            const interval = setInterval(() => {
+                x += speed;
+                food.style.left = x + "px";
+
+                if (x > game.offsetWidth) {
+                    clearInterval(interval);
+                    if (food.parentNode) food.remove();
+                    if (food.dataset.good !== "true") {
+                        lives--;
+                        livesEl.textContent = "❤️".repeat(lives);
+                        if (lives <= 0) {
+                            clearInterval(foodSpawnInterval);
+                            alert("Konec hry! Skóre: " + score);
+                            backToMenu();
+                        }
+                    }
+                }
+            }, 16);
+
+            food.addEventListener("click", () => {
+                if (food.dataset.good === "true") {
+                    clearInterval(interval);
+                    if (food.parentNode) food.remove();
+                    score++;
+                    scoreEl.textContent = score;
+                    
+                    if (score >= MAX_SCORE) {
+                        clearInterval(foodSpawnInterval);
+                        alert("Bravo! Dosáhla jsi maxima 30 bodů! 🎉");
+                        backToMenu();
+                    }
+                }
+            });
+        }
+
+        foodSpawnInterval = setInterval(spawnFood, 2500);
+    }
+
+    // ===== PUZZLE (SKLÁDÁNÍ OBRÁZKU - DRAG & DROP) =====
+    function initBlockBlastGame() {
+        const puzzleContainer = document.getElementById('puzzle-simple');
+        const scoreEl = document.getElementById('tetris-score');
+        
+        puzzleContainer.innerHTML = '';
+        // Hlavní kontejner
+        puzzleContainer.style.display = 'flex';
+        puzzleContainer.style.flexDirection = 'column';
+        puzzleContainer.style.alignItems = 'center';
+        puzzleContainer.style.justifyContent = 'flex-start';
+        puzzleContainer.style.gap = '20px';
+        puzzleContainer.style.gridTemplateColumns = 'auto';
+        puzzleContainer.style.gridTemplateRows = 'auto';
+        puzzleContainer.style.flexWrap = 'wrap';
+        scoreEl.textContent = '0/9';
+        
+        // Obrázek - kočka
+        const imageUrl = 'https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=400&auto=format&fit=crop';
+        
+        let placed = 0;
+        let draggedPiece = null;
+        let slots = [];
+        
+        // Hlavní plocha pro skládání - větší
+        const boardContainer = document.createElement('div');
+        boardContainer.style.display = 'grid';
+        boardContainer.style.gridTemplateColumns = 'repeat(3, 120px)';
+        boardContainer.style.gridTemplateRows = 'repeat(3, 120px)';
+        boardContainer.style.gap = '3px';
+        boardContainer.style.background = '#8B7355';
+        boardContainer.style.padding = '20px';
+        boardContainer.style.borderRadius = '15px';
+        boardContainer.style.border = '5px solid #654321';
+        boardContainer.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
+        boardContainer.style.width = 'fit-content';
+        
+        // Vytvoř sloty na board
+        for (let i = 0; i < 9; i++) {
+            const slot = document.createElement('div');
+            slot.style.width = '120px';
+            slot.style.height = '120px';
+            slot.style.background = '#D2B48C';
+            slot.style.border = '3px dashed #8B7355';
+            slot.style.borderRadius = '8px';
+            slot.style.cursor = 'grab';
+            slot.style.display = 'flex';
+            slot.style.alignItems = 'center';
+            slot.style.justifyContent = 'center';
+            slot.style.transition = 'all 0.2s ease';
+            slot.style.position = 'relative';
+            slot.style.fontSize = '12px';
+            slot.style.color = '#654321';
+            slot.style.fontWeight = 'bold';
+            slot.textContent = '?';
+            slot.dataset.index = i;
+            slot.dataset.filled = 'false';
+            slots.push(slot);
+            
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                slot.style.background = '#FFE4B5';
+                slot.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.2)';
+                slot.style.transform = 'scale(0.95)';
+            });
+            
+            slot.addEventListener('dragleave', () => {
+                if (slot.dataset.filled === 'false') {
+                    slot.style.background = '#D2B48C';
+                    slot.style.boxShadow = 'none';
+                    slot.style.transform = 'scale(1)';
+                }
+            });
+            
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!draggedPiece) return;
+                
+                const slotIndex = parseInt(slot.dataset.index);
+                const pieceIndex = parseInt(draggedPiece.dataset.index);
+                
+                if (slotIndex === pieceIndex) {
+                    // Správné místo!
+                    const row = Math.floor(slotIndex / 3);
+                    const col = slotIndex % 3;
+                    
+                    slot.textContent = '';
+                    slot.style.backgroundImage = `url('${imageUrl}')`;
+                    slot.style.backgroundSize = '360px 360px';
+                    slot.style.backgroundPosition = `${col * -120}px ${row * -120}px`;
+                    slot.style.backgroundRepeat = 'no-repeat';
+                    slot.style.backgroundAttachment = 'local';
+                    slot.style.backgroundColor = 'transparent';
+                    slot.style.border = '3px solid #90EE90';
+                    slot.style.cursor = 'default';
+                    slot.style.boxShadow = '0 0 15px rgba(144, 238, 144, 0.6) inset';
+                    slot.dataset.filled = 'true';
+                    
+                    draggedPiece.style.opacity = '0.3';
+                    draggedPiece.style.cursor = 'default';
+                    draggedPiece.draggable = false;
+                    draggedPiece.dataset.placed = 'true';
+                    draggedPiece.disabled = true;
+                    
+                    placed++;
+                    scoreEl.textContent = placed + '/9';
+                    
+                    if (placed === 9) {
+                        setTimeout(() => {
+                            alert('BRAVO! Puzzle je hotovo! 🎉🎉🎉');
+                            backToMenu();
+                        }, 300);
+                    }
+                } else {
+                    // Špatné místo - chvilka se zčervená
+                    slot.style.background = '#FFB6C1';
+                    slot.style.border = '3px solid #FF6B9D';
+                    setTimeout(() => {
+                        if (slot.dataset.filled === 'false') {
+                            slot.style.background = '#D2B48C';
+                            slot.style.border = '3px dashed #8B7355';
+                            slot.style.boxShadow = 'none';
+                        }
+                        slot.style.transform = 'scale(1)';
+                    }, 500);
+                }
+            });
+            
+            boardContainer.appendChild(slot);
+        }
+        
+        // Popis
+        const instruction = document.createElement('p');
+        instruction.textContent = 'Táhni dílky na správná místa na desku! 🧩';
+        instruction.style.color = '#4169e1';
+        instruction.style.fontSize = '16px';
+        instruction.style.marginTop = '0';
+        instruction.style.marginBottom = '10px';
+        
+        // Kontejner s dílky
+        const piecesContainer = document.createElement('div');
+        piecesContainer.style.display = 'flex';
+        piecesContainer.style.flexWrap = 'wrap';
+        piecesContainer.style.gap = '12px';
+        piecesContainer.style.justifyContent = 'center';
+        piecesContainer.style.padding = '20px';
+        piecesContainer.style.background = 'rgba(65, 105, 225, 0.15)';
+        piecesContainer.style.borderRadius = '15px';
+        piecesContainer.style.border = '3px solid #4169e1';
+        piecesContainer.style.maxWidth = '600px';
+        
+        // Vytvoř dílky
+        const pieces = [];
+        for (let i = 0; i < 9; i++) {
+            pieces.push(i);
+        }
+        
+        // Zamíchej pořadí
+        const shuffled = [...pieces].sort(() => Math.random() - 0.5);
+        
+        shuffled.forEach((index) => {
+            const row = Math.floor(index / 3);
+            const col = index % 3;
+            
+            const pieceEl = document.createElement('div');
+            pieceEl.style.width = '120px';
+            pieceEl.style.height = '120px';
+            pieceEl.style.background = `url('${imageUrl}')`;
+            pieceEl.style.backgroundSize = '360px 360px';
+            pieceEl.style.backgroundPosition = `${col * -120}px ${row * -120}px`;
+            pieceEl.style.border = '3px solid #fff';
+            pieceEl.style.borderRadius = '8px';
+            pieceEl.style.cursor = 'grab';
+            pieceEl.style.transition = 'all 0.2s ease';
+            pieceEl.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+            pieceEl.draggable = true;
+            pieceEl.dataset.index = index;
+            pieceEl.dataset.placed = 'false';
+            
+            pieceEl.addEventListener('dragstart', (e) => {
+                draggedPiece = pieceEl;
+                e.dataTransfer.effectAllowed = 'move';
+                pieceEl.style.opacity = '0.7';
+            });
+            
+            pieceEl.addEventListener('dragend', () => {
+                pieceEl.style.opacity = '1';
+                draggedPiece = null;
+            });
+            
+            pieceEl.addEventListener('mouseenter', () => {
+                if (pieceEl.dataset.placed === 'false') {
+                    pieceEl.style.transform = 'scale(1.1)';
+                    pieceEl.style.cursor = 'grab';
+                }
+            });
+            
+            pieceEl.addEventListener('mouseleave', () => {
+                pieceEl.style.transform = 'scale(1)';
+            });
+            
+            piecesContainer.appendChild(pieceEl);
+        });
+        
+        // Přidej vše do kontejneru
+        // Nejdřív popis
+        puzzleContainer.appendChild(instruction);
+        
+        // Pak kontejner s board a pieces vedle sebe
+        const contentWrapper = document.createElement('div');
+        contentWrapper.style.display = 'flex';
+        contentWrapper.style.flexDirection = 'row';
+        contentWrapper.style.gap = '30px';
+        contentWrapper.style.alignItems = 'flex-start';
+        contentWrapper.style.justifyContent = 'center';
+        contentWrapper.style.flexWrap = 'wrap';
+        
+        contentWrapper.appendChild(boardContainer);
+        contentWrapper.appendChild(piecesContainer);
+        puzzleContainer.appendChild(contentWrapper);
+    }
+
+
+    // ===== PUZZLE HRA (MEMORY) =====
+    function initPuzzleGame() {
+        const memoryBoard = document.getElementById("memory-board");
+        const puzzleCount = document.getElementById("puzzle-count");
+
+        memoryBoard.innerHTML = "";
+        puzzleCount.textContent = "0";
+
+        const emojis = ["🐶", "🐱", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯"];
+        const cards = [...emojis, ...emojis];
+        const shuffled = cards.sort(() => Math.random() - 0.5);
+
+        let flipped = [];
+        let matched = 0;
+        let canFlip = true;
+
+        shuffled.forEach((emoji, index) => {
+            const card = document.createElement("div");
+            card.className = "memory-card";
+            card.dataset.emoji = emoji;
+            card.dataset.index = index;
+            card.textContent = "?";
+
+            card.addEventListener("click", () => {
+                if (!canFlip || card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+                card.classList.add("flipped");
+                card.textContent = emoji;
+                flipped.push(card);
+
+                if (flipped.length === 2) {
+                    canFlip = false;
+                    const [card1, card2] = flipped;
+
+                    if (card1.dataset.emoji === card2.dataset.emoji) {
+                        setTimeout(() => {
+                            card1.classList.add("matched");
+                            card2.classList.add("matched");
+                            matched++;
+                            puzzleCount.textContent = matched;
+                            flipped = [];
+                            canFlip = true;
+
+                            if (matched === 8) {
+                                setTimeout(() => {
+                                    alert("Bravo! Našla jsi všechny páry! 🎉");
+                                    backToMenu();
+                                }, 300);
+                            }
+                        }, 600);
+                    } else {
+                        setTimeout(() => {
+                            card1.classList.remove("flipped");
+                            card2.classList.remove("flipped");
+                            card1.textContent = "?";
+                            card2.textContent = "?";
+                            flipped = [];
+                            canFlip = true;
+                        }, 800);
+                    }
+                }
+            });
+
+            memoryBoard.appendChild(card);
+        });
+    }
+</script>
+
+</body>
+</html>
